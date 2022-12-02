@@ -9,26 +9,24 @@ object MyServerSpec extends ZIOSpecDefault:
   def spec = suite("server")(
     test("should count one") {
       for
-        ref <- Ref.Synchronized.make(0)
+        ref <- MyServer.sharedState
         resp <- MyServer.app(ref)(Request.get(URL.root))
         body <- resp.body.asString
       yield
         assert(body)(equalTo("Count = 1"))
     },
     test("should count two sequential") {
-      val check = for
-        ref <- Ref.Synchronized.make(0)
+      for
+        ref <- MyServer.sharedState
         _ <- MyServer.app(ref)(Request.get(URL.root))
         resp <- MyServer.app(ref)(Request.get(URL.root))
         body <- resp.body.asString
       yield
         assert(body)(equalTo("Count = 2"))
-
-      check.provideLayer(MyServer.sharedStateLayer)
     },
     test("should count two parallel") {
       for
-        ref <- Ref.Synchronized.make(0)
+        ref <- MyServer.sharedState
         oneFork <- MyServer.app(ref)(Request.get(URL.root)).fork
         twoFork <- MyServer.app(ref)(Request.get(URL.root)).fork
         _ <- oneFork.join

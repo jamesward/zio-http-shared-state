@@ -11,25 +11,16 @@ import java.util.concurrent.TimeUnit
 
 object MyServer extends ZIOAppDefault:
 
-  def handler(ref: Ref.Synchronized[Int]): ZIO[Any, Nothing, Response] =
-      for
-        count <- ref.updateAndGet(_ + 1)
-      yield
-        Response.text(s"Count = $count")
-
   def app(ref: Ref.Synchronized[Int]) = Http.collectZIO[Request] {
-    case Method.GET -> Path.root => handler(ref)
+    case Method.GET -> Path.root =>
+      ref.updateAndGet(_ + 1).map { count => Response.text(s"Count = $count") }
   }
 
-  val sharedStateLayer = ZLayer.scoped {
-    Ref.Synchronized.make(0)
-  }
-
-  val middleware = Middleware.collectZIO
+  val sharedState = Ref.Synchronized.make(0)
 
   def run =
     for
-      ref <- Ref.Synchronized.make(0)
+      ref <- sharedState
       server <- Server.serve(app(ref)).provide(Server.default)
     yield
       server
