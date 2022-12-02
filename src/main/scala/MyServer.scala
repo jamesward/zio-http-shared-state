@@ -11,12 +11,12 @@ import java.util.concurrent.TimeUnit
 
 object MyServer extends ZIOAppDefault:
 
-  def app(ref: Ref.Synchronized[Int]) = Http.collectZIO[Request] {
+  def app(ref: Ref[Int]) = Http.collectZIO[Request] {
     case Method.GET -> Path.root =>
       ref.updateAndGet(_ + 1).map { count => Response.text(s"Count = $count") }
   }
 
-  val sharedState = Ref.Synchronized.make(0)
+  val sharedState = Ref.make(0)
 
   def run =
     for
