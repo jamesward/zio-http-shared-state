@@ -11,9 +11,9 @@ import java.util.concurrent.TimeUnit
 
 object MyServer extends ZIOAppDefault:
 
-  val handler: ZIO[FiberRef[Int], Nothing, Response] =
+  val handler: ZIO[Ref.Synchronized[Int], Nothing, Response] =
       for
-        ref <- ZIO.service[FiberRef[Int]]
+        ref <- ZIO.service[Ref.Synchronized[Int]]
         count <- ref.updateAndGet(_ + 1)
       yield
         Response.text(s"Count = $count")
@@ -23,7 +23,7 @@ object MyServer extends ZIOAppDefault:
   }
 
   val sharedStateLayer = ZLayer.scoped {
-    FiberRef.make(0)
+    Ref.Synchronized.make(0)
   }
 
   def run =
